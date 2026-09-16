@@ -1,0 +1,84 @@
+---
+title: "Lab2HDS"
+author: "Benjamin Wilson"
+date: "2026-09-15"
+output: html_document
+---
+
+## R Markdown setup
+
+Came with the file.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading the data
+
+This section identifies the url for the RNA-seq data and downloads the file to the 
+working directory. This differs from the Source.md by downloading the file before 
+creating the fpkm object, for my computer was having issues creating the variable
+before. 
+
+
+```{r url}
+url <- "https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE52778&format=file&file=GSE52778_All_Sample_FPKM_Matrix.txt.gz"
+
+download.file(url, "GSE52778_FPKM.txt.gz", mode = "wb")
+```
+
+## Creating the FPKM table
+
+With the dataset downloaded, the fpkm object can be created. As stated before, the
+code before did not work for me, so I had to download the file first. I asked 
+GPT-4o-mini for assistance in creating the new object. This new table takes the
+text file, specifies there are headers, creates separators, and makes sure the data
+is not treated as factors. Then, two functions check for quality control with 
+dimensions and the first few rows of the table.
+
+
+```{r}
+fpkm <- read.table(
+  "GSE52778_FPKM.txt.gz",
+  header = TRUE,
+  sep = "",
+  stringsAsFactors = FALSE
+)
+
+dim(fpkm)
+head(fpkm)
+```
+
+## Finding the top 10 genes with the highest Dex FPKM
+
+I wanted to find the 10 genes with the highest Dex FPKM values. The code below 
+orders the fpkm data frame by the Dex_FPKM column in descending order and then 
+selects the top 10 rows. It then ties this value to the gene_short_name column.
+
+
+```{r}
+top_genes <- fpkm[order(fpkm$Dex_FPKM, decreasing = TRUE), ]
+top_genes <- head(top_genes, 10)
+
+top_genes[, c("gene_short_name", "Dex_FPKM")]
+```
+
+## Creating a bar plot of the top 10 genes
+
+I used my familiarity with the ggplot2 package to create a bar plot of the top 10 
+genes with the highest Dex FPKM values. The code below specifies the data frame, 
+the x and y aesthetics, and uses geom_col to create the bars. It also adds labels 
+and a minimal theme for better visualization.
+
+```{r}
+library(ggplot2)
+
+ggplot(top_genes, aes(x = gene_short_name, y = Dex_FPKM)) +
+  geom_col(fill = "steelblue") +
+  labs(
+    title = "Top 10 Most Highly Expressed Genes in Dex",
+    x = "Gene",
+    y = "FPKM"
+  ) +
+  theme_minimal()
+```
